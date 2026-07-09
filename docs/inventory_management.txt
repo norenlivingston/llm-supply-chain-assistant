@@ -1,0 +1,9 @@
+Inventory Management Fundamentals
+
+Safety stock is buffer inventory held above expected demand to protect against variability in demand or lead time. It is typically sized using a service-level target and the standard deviation of demand during lead time: safety_stock = z * sigma_demand * sqrt(lead_time). Higher service levels require a higher z-score and therefore more buffer stock, which trades off against holding cost.
+
+The reorder point (ROP) is the inventory level that triggers a new purchase order. It is calculated as ROP = average_daily_demand * lead_time_days + safety_stock. If on-hand inventory falls below the reorder point, a replenishment order should be placed to avoid a stockout before the new stock arrives.
+
+Economic order quantity (EOQ) is the order size that minimizes the sum of ordering cost and holding cost. It is calculated as EOQ = sqrt((2 * annual_demand * order_cost) / holding_cost_per_unit). Ordering too frequently in small batches drives up ordering cost; ordering too infrequently in large batches drives up holding cost and ties up working capital.
+
+ABC analysis segments SKUs by contribution to revenue or usage value. "A" items are typically the top 10-20% of SKUs by value and account for 70-80% of total value; they warrant tighter inventory control and more frequent review. "C" items are numerous but low-value and are usually managed with simple, low-touch replenishment rules to avoid wasting planning effort.

@@ -1,0 +1,11 @@
+Incoterms 2020 Overview
+
+Incoterms are standardized three-letter trade terms published by the International Chamber of Commerce that define which party (buyer or seller) is responsible for shipping cost, insurance, and risk at each point in a shipment's journey. They do not address who holds title to the goods or payment terms, only logistics cost and risk transfer.
+
+EXW (Ex Works) places minimum obligation on the seller: the buyer is responsible for the goods from the seller's premises onward, including loading, export clearance, and all transport. This gives the buyer maximum control but also maximum logistics burden.
+
+FOB (Free On Board) applies to sea freight only. The seller is responsible for delivering goods onto the vessel at the named port; risk transfers to the buyer once the goods are loaded. FOB is one of the most common terms in international container shipping.
+
+CIF (Cost, Insurance, and Freight) also applies to sea freight. The seller pays for the cost of goods, freight, and minimum insurance to the destination port, but risk transfers to the buyer once goods are loaded onto the vessel at origin, similar to FOB, even though the seller is paying for the onward journey.
+
+DDP (Delivered Duty Paid) places maximum obligation on the seller: the seller handles transport, export and import clearance, duties, and delivery to the buyer's named destination. This is the most convenient term for the buyer but requires the seller to have strong customs and logistics capability in the destination country.

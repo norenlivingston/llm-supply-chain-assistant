@@ -1,0 +1,11 @@
+Freight Modes: LTL vs FTL
+
+Full truckload (FTL) shipping dedicates an entire trailer to a single shipper's freight, moving directly from origin to destination with no intermediate stops or handling. It is generally faster and lower-risk for damage since the freight isn't touched between pickup and delivery, and is cost-effective once shipment volume approaches trailer capacity (commonly 10,000+ lbs or a full pallet count).
+
+Less-than-truckload (LTL) shipping consolidates freight from multiple shippers onto one trailer, with each shipper paying only for the space and weight their freight uses. LTL is more cost-effective for smaller shipments but involves more handling (freight is typically unloaded and reloaded at one or more terminal hubs), which increases transit time variability and damage risk relative to FTL.
+
+Mode selection generally weighs shipment weight and density, time sensitivity, and cost. As a rough rule of thumb, shipments under roughly 10,000-15,000 lbs that don't fill a trailer are more economical via LTL, while larger or time-critical shipments favor FTL despite the higher absolute cost, because a dedicated trailer removes the multi-stop delay risk inherent to LTL networks.
+
+Parcel shipping (small package carriers) is used for shipments below LTL minimums, typically single boxes up to around 150 lbs, and is priced per package based on weight, dimensions, and zone distance rather than pallet count.
+
+Freight class, part of the NMFC (National Motor Freight Classification) system, affects LTL pricing based on density, stowability, handling difficulty, and liability. Lower freight classes (denser, easier to handle) are cheaper to ship than higher freight classes for the same weight.

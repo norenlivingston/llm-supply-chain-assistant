@@ -1,0 +1,11 @@
+Cold Chain Logistics
+
+Cold chain logistics refers to the temperature-controlled supply chain used for perishable goods such as fresh food, frozen food, and pharmaceuticals. Maintaining an unbroken temperature range from origin to final destination is critical; a single gap, such as a delayed dock transfer with no refrigeration, can spoil an entire load and create a food-safety risk.
+
+Refrigerated trucks ("reefers") maintain set temperature ranges in transit, commonly categorized as frozen (below 0°F / -18°C), refrigerated/chilled (33-40°F / 0.5-4.5°C), and controlled ambient for products sensitive to heat but not requiring refrigeration. Reefer units are monitored continuously, and many shippers require temperature logging devices in the trailer to provide a auditable record for each shipment.
+
+HACCP (Hazard Analysis and Critical Control Points) is a systematic food-safety framework that identifies points in the supply chain where contamination or temperature excursion risk is highest, and sets control limits and monitoring procedures at those points, such as receiving dock temperature checks and cross-dock dwell time limits.
+
+Cross-docking is especially sensitive in cold chain operations because product moves from inbound trailer to outbound trailer with minimal or no storage in between, reducing the time product spends outside of a controlled environment. Facilities running cold cross-docks typically target dwell times of well under an hour to limit temperature risk.
+
+Because of spoilage risk, cold chain networks generally carry less safety stock buffer than ambient networks and instead rely on shorter lead times, tighter delivery windows, and more frequent replenishment cycles to manage variability.

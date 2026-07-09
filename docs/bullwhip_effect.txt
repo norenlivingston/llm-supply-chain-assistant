@@ -1,0 +1,9 @@
+The Bullwhip Effect
+
+The bullwhip effect describes how small fluctuations in end-customer demand become progressively amplified as orders move upstream through a supply chain, from retailer to distributor to manufacturer to raw material supplier. A retailer might see a 5% demand increase but the raw material supplier ends up planning for a 40% swing.
+
+Four commonly cited causes are: demand signal processing (each tier updates forecasts based on the order pattern it sees, not true end demand), order batching (ordering in large infrequent batches to save on fixed order costs, which distorts the signal seen upstream), price fluctuations (forward buying during promotions creates artificial demand spikes followed by troughs), and rationing/shortage gaming (when supply is constrained, downstream partners inflate orders expecting a cut, then cancel once supply normalizes).
+
+Mitigations include sharing point-of-sale data directly with upstream partners so every tier forecasts off real demand rather than derived orders (a practice known as information sharing or POS visibility), vendor-managed inventory (VMI) where the supplier owns replenishment decisions using the retailer's actual sell-through data, smaller and more frequent order batches enabled by lower fixed ordering costs (e.g. via EDI or automated procurement), and stable everyday pricing instead of frequent deep promotions that trigger forward buying.
+
+Collaborative Planning, Forecasting, and Replenishment (CPFR) is a broader framework that formalizes this collaboration: trading partners jointly agree on a demand forecast, flag and resolve exceptions, and align replenishment plans, which reduces the double-guessing that drives bullwhip amplification.

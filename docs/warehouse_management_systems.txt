@@ -1,0 +1,11 @@
+Warehouse Management Systems
+
+A warehouse management system (WMS) is software that controls and optimizes day-to-day warehouse operations: receiving, putaway, inventory tracking, picking, packing, and shipping. It typically integrates with an ERP system for order and inventory data and with a transportation management system (TMS) for outbound shipment planning.
+
+Slotting is the process of assigning SKUs to specific storage locations to minimize travel time and picking effort. Fast-moving, high-velocity SKUs are typically slotted close to packing and shipping areas ("golden zone" locations), while slow movers are placed farther away. Poor slotting is one of the most common causes of excess labor cost in a distribution center, since pickers spend more time traveling than picking.
+
+Cross-docking is a warehouse strategy where inbound goods are unloaded and immediately routed to outbound trailers with little or no intermediate storage. It reduces handling cost and inventory holding time but requires tight synchronization between inbound and outbound schedules, since there is little buffer to absorb timing mismatches.
+
+Pick paths, wave planning, and batch picking are WMS features used to sequence and group outbound orders so pickers travel efficient routes and multiple orders can be fulfilled in a single pass through the warehouse. A well-tuned WMS can meaningfully reduce labor cost per order, which is typically the largest controllable cost in a distribution center.
+
+Cycle counting is an ongoing inventory accuracy process where a subset of SKUs is counted on a rotating schedule (often prioritizing high-value or high-velocity items) rather than doing a single disruptive full physical inventory once a year. It surfaces discrepancies faster and keeps inventory accuracy high enough to trust system-driven replenishment decisions.

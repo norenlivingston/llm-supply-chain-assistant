@@ -1,0 +1,9 @@
+Demand Forecasting Basics
+
+Demand forecasting predicts future customer demand to drive inventory, production, and labor planning decisions. Time-series methods (moving average, exponential smoothing, ARIMA) extrapolate from historical demand patterns and work well for stable, high-volume SKUs with limited external shocks. Causal methods incorporate external drivers such as price, promotions, weather, or macroeconomic indicators, and are typically needed for SKUs where demand is heavily influenced by factors outside historical sales patterns.
+
+Forecast accuracy is commonly measured with MAPE (Mean Absolute Percentage Error), which expresses average forecast error as a percentage of actual demand, and forecast bias, which captures whether a forecast systematically over- or under-predicts rather than just measuring error magnitude. A forecast can have low MAPE but high bias if errors are large but consistently in one direction, which is often worse operationally than random noise because it compounds over time.
+
+Forecasting is typically done at multiple levels of aggregation: SKU-location level for operational replenishment decisions, and higher aggregation levels (SKU-region, product family, or total company) for capacity and financial planning, since aggregate forecasts are inherently more accurate than granular ones due to statistical pooling of independent errors.
+
+New product introductions and promotional periods are the hardest forecasting scenarios because there is little or no relevant history; these typically rely on analogous-product comparisons, planner judgment overrides, and post-launch rapid re-forecasting rather than pure statistical extrapolation.
