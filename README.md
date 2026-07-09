@@ -10,15 +10,17 @@ Anthropic tool calling throughout, for a transparent agent loop.
 llm-supply-chain-assistant/
 ├── docs/            supply chain knowledge base (.txt), ingested into Chroma
 ├── config.py         shared MODEL constant + client/collection factories
+├── app.py             unified demo app: toggle between Plain RAG and
+│                      Agentic mode in one place (see below)
 ├── session1/          Anthropic API basics: single call, multi-turn loop
 ├── session2/          temperature control, prompt templates, structured
 │                      JSON extraction (forced tool use), in-memory Chroma
 ├── session3/          persistent Chroma, ingestion, retrieval, full RAG
 │                      pipeline with citations + hallucination guardrails,
-│                      Streamlit UI
+│                      standalone Streamlit UI
 └── session4/          agentic layer: tool definitions, multi-step
-                       reasoning/routing loop, Streamlit UI with a visible
-                       tool-call trace
+                       reasoning/routing loop, standalone Streamlit UI with
+                       a visible tool-call trace
 ```
 
 ## Setup
@@ -50,6 +52,9 @@ streamlit run session3/app.py
 # Session 4 - agentic layer (requires session3.ingest to have run at least once)
 python -m session4.agent
 streamlit run session4/app.py
+
+# Unified demo app - toggle between Plain RAG and Agentic mode side by side
+streamlit run app.py
 ```
 
 ## Session 4: the agentic layer
@@ -82,6 +87,19 @@ of SH-1001 and should I be worried about a stockout?" — knowledge search
 `session4/app.py` is a Streamlit front end that shows the full tool-call
 trace (tool name, input, and raw output) for each answer, so the agent's
 reasoning path is inspectable rather than a black box.
+
+## The unified app
+
+`app.py` (repo root) puts Session 3's plain RAG pipeline and Session 4's
+agent behind a single sidebar toggle instead of two separate `streamlit
+run` commands. The point is comparison: ask the same question in both
+modes and see the difference directly — e.g. "where is shipment SH-1002?"
+gets a real structured answer in Agentic mode (`lookup_shipment_status`)
+but only a "not in the knowledge base" response in Plain RAG mode, since
+plain retrieval has no access to shipment records at all. This is the
+front end worth linking as the live demo; `session3/app.py` and
+`session4/app.py` stay in place as the incremental, session-by-session
+build artifacts.
 
 ## Notes
 
