@@ -1,9 +1,13 @@
 """Shared constants and client factories used across all sessions."""
 from pathlib import Path
 
-MODEL = "claude-sonnet-4-6"
+from dotenv import load_dotenv
 
 ROOT_DIR = Path(__file__).resolve().parent
+load_dotenv(ROOT_DIR / ".env")
+
+MODEL = "claude-sonnet-4-6"
+
 DOCS_DIR = ROOT_DIR / "docs"
 CHROMA_DIR = ROOT_DIR / "chroma_store"
 COLLECTION_NAME = "supply_chain_kb"
