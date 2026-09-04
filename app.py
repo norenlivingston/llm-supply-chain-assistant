@@ -31,10 +31,13 @@ with st.sidebar:
     )
     if st.button("Clear conversation"):
         st.session_state.history = []
+        st.session_state.agent_messages = []
         st.rerun()
 
 if "history" not in st.session_state:
     st.session_state.history = []
+if "agent_messages" not in st.session_state:
+    st.session_state.agent_messages = []
 
 
 def render_trace(trace: list[dict]) -> None:
@@ -65,7 +68,10 @@ if question:
         st.caption(mode)
         with st.spinner("Thinking..."):
             if mode.startswith("Agentic"):
-                result = run_agent(question, verbose=False)
+                result = run_agent(
+                    question, history=st.session_state.agent_messages, verbose=False
+                )
+                st.session_state.agent_messages = result["messages"]
                 answer, trace, sources = result["answer"], result["trace"], None
             else:
                 result = answer_question(question)

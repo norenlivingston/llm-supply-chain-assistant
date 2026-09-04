@@ -18,9 +18,11 @@ llm-supply-chain-assistant/
 ├── session3/          persistent Chroma, ingestion, retrieval, full RAG
 │                      pipeline with citations + hallucination guardrails,
 │                      standalone Streamlit UI
-└── session4/          agentic layer: tool definitions, multi-step
-                       reasoning/routing loop, standalone Streamlit UI with
-                       a visible tool-call trace
+├── session4/          agentic layer: tool definitions (including one that
+│                      writes, gated behind human confirmation), SQLite
+│                      shipment records, multi-step reasoning/routing loop,
+│                      standalone Streamlit UI with a visible tool-call trace
+└── eval/              tool-routing accuracy eval for the agent (see below)
 ```
 
 ## Setup
@@ -55,6 +57,9 @@ streamlit run session4/app.py
 
 # Unified demo app - toggle between Plain RAG and Agentic mode side by side
 streamlit run app.py
+
+# Eval - does the agent route to the right tool(s) per question?
+python -m eval.eval_routing
 ```
 
 ## Session 4: the agentic layer
@@ -70,10 +75,21 @@ that decides, per question, what it actually needs:
   full RAG completion call.
 - **`calculate_reorder_point`** — deterministic inventory math. Forces the
   model to call a tool for arithmetic instead of hallucinating a number.
-- **`lookup_shipment_status`** — a structured lookup against a mock
-  shipment table, standing in for a real TMS/ERP call. Demonstrates routing
-  between unstructured knowledge search and structured system-of-record
-  lookups, a distinction real supply chain agents have to make constantly.
+- **`lookup_shipment_status`** — a structured, read-only lookup against a
+  SQLite `shipments` table (`session4/db.py`), standing in for a real
+  TMS/ERP call. Demonstrates routing between unstructured knowledge search
+  and structured system-of-record reads, a distinction real supply chain
+  agents have to make constantly.
+- **`flag_shipment_for_expedite`** — the one tool that writes. It defaults
+  to `confirm=false`, which looks the shipment up and returns a preview of
+  the change without writing anything; the system prompt requires the
+  agent to relay that preview and get the user's explicit agreement on a
+  later turn before calling it again with `confirm=true` to actually apply
+  it. The gate is enforced in the function itself, not just the prompt — a
+  first call can never write, regardless of what the model decides to do.
+  `run_agent` accepts an optional `history` list so a caller can carry the
+  conversation across turns, which is what makes the second, confirmed
+  call possible.
 
 `session4/agent.py` implements the loop: call the model with the tool
 definitions, and while `stop_reason == "tool_use"`, execute the requested
@@ -101,8 +117,28 @@ front end worth linking as the live demo; `session3/app.py` and
 `session4/app.py` stay in place as the incremental, session-by-session
 build artifacts.
 
+## Eval: tool-routing accuracy
+
+`eval/eval_routing.py` is not a RAG-groundedness eval (whether answer text
+is correct) — it scores whether the agent calls the *right tool(s)* for a
+question, since correct routing is specifically what the agentic layer is
+supposed to add over plain RAG. Six cases cover: a concept question
+(expects `search_knowledge_base`), a math question (expects
+`calculate_reorder_point`), a shipment lookup (expects
+`lookup_shipment_status`), a combined question needing both knowledge
+search and a shipment lookup, an expedite request (expects the guarded
+tool to preview only, not write), and a question needing no tool at all.
+
+A second check, `score_confirm_flow`, verifies the write guardrail
+end-to-end across two turns: the first turn must leave the database
+unmodified, and only the confirmed follow-up turn may apply the change —
+checked against the actual SQLite row, not just the tool's return value.
+
+Both require `ANTHROPIC_API_KEY` and make real API calls.
+
 ## Notes
 
-- `chroma_store/` is gitignored and created locally by `session3.ingest`.
+- `chroma_store/` and `shipments.db` are gitignored and created locally by
+  `session3.ingest` / `session4.db` on first run.
 - `MODEL` lives in one place (`config.py`) — change it there if your account
   uses a different model id than the one checked in.

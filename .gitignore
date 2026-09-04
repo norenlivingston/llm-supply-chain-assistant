@@ -1,4 +1,5 @@
 chroma_store/
+shipments.db
 __pycache__/
 *.pyc
 .venv/
