@@ -117,6 +117,22 @@ front end worth linking as the live demo; `session3/app.py` and
 `session4/app.py` stay in place as the incremental, session-by-session
 build artifacts.
 
+### Access gate and message cap
+
+Since a live-deployed link is backed by a real, billed API key, `app.py`
+is gated: an access code is required before the chat UI renders, and each
+browser session is capped at 5 messages. Neither is a strong security
+boundary (a new session resets the cap, a leaked code bypasses the gate),
+but combined with keeping the API key's balance small and auto-reload off
+in the Anthropic Console, it bounds cost to something trivial for a link
+handed to a specific, small audience rather than the open internet.
+
+To run it locally: copy `.streamlit/secrets.toml.example` to
+`.streamlit/secrets.toml` and set your own `APP_PASSWORD` (this file is
+gitignored, same as `.env`). To deploy on Streamlit Community Cloud: set
+`APP_PASSWORD` under the app's **Settings → Secrets** instead — never
+commit the real value.
+
 ## Eval: tool-routing accuracy
 
 `eval/eval_routing.py` is not a RAG-groundedness eval (whether answer text
