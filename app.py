@@ -20,9 +20,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import streamlit as st
 
-from config import estimate_cost
+from config import estimate_cost, get_collection
+from session3.ingest import ingest_docs
 from session3.rag_pipeline import answer_question
 from session4.agent import run_agent
+
+
+@st.cache_resource
+def ensure_docs_ingested() -> int:
+    """Runs once per deployed process, not per rerun/session. chroma_store/
+    is gitignored (it's a build artifact, not source), so a fresh deploy -
+    Streamlit Community Cloud included - starts with an empty collection
+    unless something ingests docs/ on first boot. This is that something.
+    """
+    collection = get_collection()
+    if collection.count() == 0:
+        return ingest_docs()
+    return collection.count()
 
 MAX_MESSAGES_PER_SESSION = 5
 
@@ -69,6 +83,8 @@ def check_access() -> bool:
 
 if not check_access():
     st.stop()
+
+ensure_docs_ingested()
 
 st.caption(
     "Agentic mode routes each question to knowledge search, inventory "
