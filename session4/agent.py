@@ -60,6 +60,14 @@ def run_agent(question: str, history: Optional[list] = None, verbose: bool = Tru
     messages.append({"role": "user", "content": question})
     trace = []
     usage = {"input_tokens": 0, "output_tokens": 0}
+    # Shipment IDs previewed (confirm=false) earlier in THIS run_agent()
+    # call. tools.py's pending_confirmations table stops a confirm=true
+    # call with no prior preview at all, but that alone doesn't stop the
+    # model from previewing and immediately confirming within the same
+    # turn - satisfying that DB check without any real human ever seeing
+    # the preview. This closes that: a confirm for a shipment previewed
+    # earlier in this same invocation is refused before the tool even runs.
+    previewed_this_turn = set()
 
     for step in range(MAX_STEPS):
         response = client.messages.create(
@@ -93,7 +101,25 @@ def run_agent(question: str, history: Optional[list] = None, verbose: bool = Tru
                 continue
             if verbose:
                 print(f"[step {step + 1}] calling {block.name}({block.input})")
-            result = run_tool(block.name, block.input)
+
+            if block.name == "flag_shipment_for_expedite":
+                shipment_id = str(block.input.get("shipment_id", "")).upper()
+                wants_confirm = bool(block.input.get("confirm", False))
+                if wants_confirm and shipment_id in previewed_this_turn:
+                    result = {
+                        "error": (
+                            "Refused: this shipment was only just previewed in "
+                            "this same conversation turn. Confirmation must "
+                            "come from the user in a separate, later message."
+                        )
+                    }
+                else:
+                    result = run_tool(block.name, block.input)
+                    if not wants_confirm and "error" not in result:
+                        previewed_this_turn.add(shipment_id)
+            else:
+                result = run_tool(block.name, block.input)
+
             trace.append({"tool": block.name, "input": block.input, "output": result})
             tool_results.append(
                 {

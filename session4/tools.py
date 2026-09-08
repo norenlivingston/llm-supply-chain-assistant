@@ -58,42 +58,69 @@ def lookup_shipment_status(shipment_id: str) -> dict:
 def flag_shipment_for_expedite(shipment_id: str, reason: str, confirm: bool = False) -> dict:
     """Write a side effect - flags a shipment for expedited handling.
 
-    Defaults to a dry run (confirm=False): looks the shipment up, returns a
-    preview of what would change, and writes nothing. The agent's system
-    prompt requires it to relay that preview to the user and get explicit
-    confirmation before calling this again with confirm=True to actually
-    apply it. The gate lives here in code, not just in the prompt - even if
-    the model ignores its instructions, a first call can never write.
+    Two layers of enforcement, not one:
+    1. confirm=True only succeeds if a matching preview (confirm=False) was
+       already recorded in pending_confirmations for this shipment_id. A
+       cold call straight to confirm=True - no prior preview at all - is
+       rejected, regardless of what the model or the user asked for. This
+       persists across calls, so it holds across separate conversation
+       turns and doesn't depend on the model's own restraint.
+    2. That alone isn't enough: within a single conversation turn, the
+       model could call preview then immediately call confirm in the same
+       breath, satisfying rule 1 without any real human ever seeing the
+       preview. session4/agent.py's run_agent additionally refuses to let
+       a confirm call resolve for a shipment previewed earlier in the same
+       run_agent() invocation - see previewed_this_turn there.
     """
+    shipment_id = shipment_id.upper()
     conn = get_connection()
     row = conn.execute(
-        "SELECT * FROM shipments WHERE shipment_id = ?", (shipment_id.upper(),)
+        "SELECT * FROM shipments WHERE shipment_id = ?", (shipment_id,)
     ).fetchone()
     if row is None:
         conn.close()
         return {"error": f"No shipment found with ID '{shipment_id}'"}
 
     if not confirm:
+        conn.execute(
+            "INSERT OR REPLACE INTO pending_confirmations (shipment_id, reason) VALUES (?, ?)",
+            (shipment_id, reason),
+        )
+        conn.commit()
         conn.close()
         return {
             "status": "confirmation_required",
-            "shipment_id": shipment_id.upper(),
+            "shipment_id": shipment_id,
             "preview": (
-                f"Would flag {shipment_id.upper()} (carrier {row['carrier']}, "
+                f"Would flag {shipment_id} (carrier {row['carrier']}, "
                 f"currently '{row['status']}') for expedite. Reason: {reason}. "
                 "This is a dry run - nothing has been written yet."
             ),
         }
 
+    pending = conn.execute(
+        "SELECT * FROM pending_confirmations WHERE shipment_id = ?", (shipment_id,)
+    ).fetchone()
+    if pending is None:
+        conn.close()
+        return {
+            "error": (
+                "No pending preview found for this shipment. Call again "
+                "with confirm=false first to preview the change before it "
+                "can be confirmed."
+            )
+        }
+
     conn.execute(
         "UPDATE shipments SET expedite_requested = 1, expedite_reason = ? WHERE shipment_id = ?",
-        (reason, shipment_id.upper()),
+        (reason, shipment_id),
     )
+    conn.execute("DELETE FROM pending_confirmations WHERE shipment_id = ?", (shipment_id,))
     conn.commit()
     conn.close()
     return {
         "status": "flagged",
-        "shipment_id": shipment_id.upper(),
+        "shipment_id": shipment_id,
         "expedite_reason": reason,
     }
 

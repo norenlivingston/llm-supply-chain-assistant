@@ -42,6 +42,14 @@ def get_connection() -> sqlite3.Connection:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS pending_confirmations (
+            shipment_id TEXT PRIMARY KEY,
+            reason TEXT NOT NULL
+        )
+        """
+    )
     if conn.execute("SELECT COUNT(*) FROM shipments").fetchone()[0] == 0:
         conn.executemany(
             "INSERT INTO shipments (shipment_id, carrier, status, origin, destination, eta) "
@@ -53,9 +61,10 @@ def get_connection() -> sqlite3.Connection:
 
 
 def reset_db() -> None:
-    """Drop and reseed the table. Used by the eval harness for a clean slate."""
+    """Drop and reseed both tables. Used by the eval harness for a clean slate."""
     conn = sqlite3.connect(DB_PATH)
     conn.execute("DROP TABLE IF EXISTS shipments")
+    conn.execute("DROP TABLE IF EXISTS pending_confirmations")
     conn.commit()
     conn.close()
     get_connection().close()
