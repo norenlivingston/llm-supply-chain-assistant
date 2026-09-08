@@ -20,10 +20,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import streamlit as st
 
+from config import estimate_cost
 from session3.rag_pipeline import answer_question
 from session4.agent import run_agent
 
 MAX_MESSAGES_PER_SESSION = 5
+
+EXAMPLE_QUESTIONS = {
+    "Plain RAG (Session 3)": "What is the bullwhip effect and how can it be mitigated?",
+    "Agentic (Session 4)": (
+        "What's the reorder point if average daily demand is 120 units, "
+        "lead time is 5 days, and safety stock is 200 units?"
+    ),
+}
 
 st.set_page_config(page_title="Supply Chain Assistant", page_icon="📦")
 st.title("📦 Supply Chain Assistant")
@@ -68,10 +77,19 @@ st.caption(
     "see the difference."
 )
 
+# A button click stashes these and reruns; resolved here, before the
+# mode_radio widget below is instantiated, since Streamlit forbids writing
+# to a widget's session_state key after it's been instantiated this run.
+question = st.session_state.pop("pending_question", None)
+pending_mode = st.session_state.pop("pending_mode", None)
+if pending_mode is not None:
+    st.session_state.mode_radio = pending_mode
+
 with st.sidebar:
     mode = st.radio(
         "Mode",
         ["Agentic (Session 4)", "Plain RAG (Session 3)"],
+        key="mode_radio",
     )
     if st.button("Clear conversation"):
         st.session_state.history = []
@@ -86,9 +104,6 @@ if "message_count" not in st.session_state:
     st.session_state.message_count = 0
 
 remaining = MAX_MESSAGES_PER_SESSION - st.session_state.message_count
-st.sidebar.caption(
-    f"{st.session_state.message_count}/{MAX_MESSAGES_PER_SESSION} messages used this session"
-)
 
 
 def render_trace(trace: list[dict]) -> None:
@@ -103,10 +118,31 @@ for turn in st.session_state.history:
         if turn["role"] == "assistant":
             st.caption(turn["mode"])
         st.markdown(turn["content"])
+        if turn.get("usage"):
+            usage = turn["usage"]
+            cost = estimate_cost(usage["input_tokens"], usage["output_tokens"])
+            st.caption(
+                f"~{usage['input_tokens']} in / {usage['output_tokens']} out "
+                f"tokens (~${cost:.4f} est.)"
+            )
         if turn.get("trace"):
             render_trace(turn["trace"])
         if turn.get("sources"):
             st.caption("Sources: " + ", ".join(turn["sources"]))
+
+if not st.session_state.history and question is None:
+    st.markdown("**Try an example:**")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📚 Plain RAG example", use_container_width=True):
+            st.session_state.pending_mode = "Plain RAG (Session 3)"
+            st.session_state.pending_question = EXAMPLE_QUESTIONS["Plain RAG (Session 3)"]
+            st.rerun()
+    with col2:
+        if st.button("🤖 Agentic example", use_container_width=True):
+            st.session_state.pending_mode = "Agentic (Session 4)"
+            st.session_state.pending_question = EXAMPLE_QUESTIONS["Agentic (Session 4)"]
+            st.rerun()
 
 if remaining <= 0:
     st.warning(
@@ -114,7 +150,7 @@ if remaining <= 0:
         "session. Thanks for trying it out!"
     )
     question = None
-else:
+elif question is None:
     question = st.chat_input("Ask about supply chain concepts, math, or a shipment ID...")
 
 if question:
@@ -135,8 +171,14 @@ if question:
             else:
                 result = answer_question(question)
                 answer, trace, sources = result["answer"], None, result["sources"]
+            usage = result["usage"]
 
         st.markdown(answer)
+        cost = estimate_cost(usage["input_tokens"], usage["output_tokens"])
+        st.caption(
+            f"~{usage['input_tokens']} in / {usage['output_tokens']} out "
+            f"tokens (~${cost:.4f} est.)"
+        )
         if trace:
             render_trace(trace)
         if sources:
@@ -149,5 +191,12 @@ if question:
             "mode": mode,
             "trace": trace,
             "sources": sources,
+            "usage": usage,
         }
     )
+
+# Rendered here, after any processing above, so it reflects this run's
+# count rather than lagging one message behind.
+st.sidebar.caption(
+    f"{st.session_state.message_count}/{MAX_MESSAGES_PER_SESSION} messages used this session"
+)

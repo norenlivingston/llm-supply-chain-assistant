@@ -59,6 +59,7 @@ def run_agent(question: str, history: Optional[list] = None, verbose: bool = Tru
     messages = list(history) if history else []
     messages.append({"role": "user", "content": question})
     trace = []
+    usage = {"input_tokens": 0, "output_tokens": 0}
 
     for step in range(MAX_STEPS):
         response = client.messages.create(
@@ -68,6 +69,8 @@ def run_agent(question: str, history: Optional[list] = None, verbose: bool = Tru
             tools=TOOLS,
             messages=messages,
         )
+        usage["input_tokens"] += response.usage.input_tokens
+        usage["output_tokens"] += response.usage.output_tokens
 
         if response.stop_reason != "tool_use":
             final_text = "".join(
@@ -79,6 +82,7 @@ def run_agent(question: str, history: Optional[list] = None, verbose: bool = Tru
                 "trace": trace,
                 "steps": step + 1,
                 "messages": messages,
+                "usage": usage,
             }
 
         messages.append({"role": "assistant", "content": response.content})
@@ -106,6 +110,7 @@ def run_agent(question: str, history: Optional[list] = None, verbose: bool = Tru
         "trace": trace,
         "steps": MAX_STEPS,
         "messages": messages,
+        "usage": usage,
     }
 
 

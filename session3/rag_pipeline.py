@@ -27,7 +27,11 @@ def build_prompt(question: str, hits: list[dict]) -> str:
 def answer_question(question: str, k: int = 4) -> dict:
     hits = retrieve(question, k=k)
     if not hits:
-        return {"answer": "No relevant context found in the knowledge base.", "sources": []}
+        return {
+            "answer": "No relevant context found in the knowledge base.",
+            "sources": [],
+            "usage": {"input_tokens": 0, "output_tokens": 0},
+        }
 
     prompt = build_prompt(question, hits)
     client = get_client()
@@ -40,6 +44,10 @@ def answer_question(question: str, k: int = 4) -> dict:
     return {
         "answer": response.content[0].text,
         "sources": sorted({hit["source"] for hit in hits}),
+        "usage": {
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+        },
     }
 
 
