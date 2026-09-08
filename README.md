@@ -4,6 +4,50 @@ A RAG pipeline with an agentic tool-calling layer on top, built against the
 Anthropic API and ChromaDB, in the supply chain domain. No LangChain — raw
 Anthropic tool calling throughout, for a transparent agent loop.
 
+## Why this is agentic, not just RAG with tools attached
+
+`session3` is a fixed pipeline: every question retrieves from the same
+knowledge base, then generates an answer. It's grounded and citation-backed,
+but it can only ever do one thing. `session4` replaces that with a model
+that decides, per question, what it actually needs — and that decision is
+what "agentic" means here, not the presence of tools by itself. Three
+things make the difference concrete rather than a buzzword:
+
+1. **Routing.** The model picks which tool(s) a question needs — knowledge
+   search, deterministic math, a structured shipment lookup, or none at
+   all — rather than a hardcoded sequence. `eval/eval_routing.py` scores
+   this directly against six cases with known-correct tool sets, so
+   routing accuracy is a checked number, not an impression from a demo.
+2. **Multi-step chaining.** A question like "given what causes the
+   bullwhip effect, what's the status of SH-1001, and should I worry about
+   a stockout?" makes the model call knowledge search *and* a shipment
+   lookup in the same turn, because neither alone answers it. The loop in
+   `session4/agent.py` keeps executing tool calls and feeding results back
+   until the model has enough to answer in plain text.
+3. **A gated write.** `flag_shipment_for_expedite` is the one tool that
+   changes state instead of reading it — the point where "agent" stops
+   being a synonym for "chatbot with extra steps" and starts having real
+   consequences if it's wrong. That's why it's the one tool with a safety
+   mechanism, described in detail in the Session 4 section below.
+
+The write guardrail is worth calling out specifically because it wasn't
+right the first time. The initial version only refused to write on an
+*unprompted default* call — but a first call that explicitly passed
+`confirm=true` wrote immediately, no prior preview required. Testing the
+guardrail directly, by trying to make it fail rather than just exercising
+the happy path, found this before anyone else would have. The fix has two
+independent layers: `confirm=true` now only succeeds if a matching preview
+was already recorded for that shipment (persisted in SQLite, so it holds
+across real conversation turns, not just within one), and separately, the
+agent loop refuses to let a preview and its confirmation resolve within
+the *same* turn, closing the gap where a model could satisfy the first
+check without any real human ever seeing the preview. Both are verified in
+`eval/eval_routing.py`'s `score_adversarial_confirm_bypass` — which sends a
+single message explicitly trying to talk the agent into skipping
+confirmation, and checks the actual database row, not the agent's claimed
+answer, since a model can *say* it did something without having called the
+tool correctly.
+
 ## Structure
 
 ```
@@ -85,10 +129,17 @@ that decides, per question, what it actually needs:
   the change without writing anything; the system prompt requires the
   agent to relay that preview and get the user's explicit agreement on a
   later turn before calling it again with `confirm=true` to actually apply
-  it. The gate is enforced in the function itself, not just the prompt — a
-  first call can never write, regardless of what the model decides to do.
-  `run_agent` accepts an optional `history` list so a caller can carry the
-  conversation across turns, which is what makes the second, confirmed
+  it. The gate is enforced in code, not just the prompt, with two layers:
+  `confirm=true` only succeeds if a matching preview was already recorded
+  in a `pending_confirmations` table (`session4/db.py`) — a cold call
+  straight to `confirm=true` is rejected outright, and since that table is
+  real SQLite state, the check holds across separate conversation turns.
+  On its own that still wouldn't stop a model from previewing and
+  immediately confirming within the *same* turn, so `run_agent` separately
+  tracks which shipments were previewed earlier in that specific
+  invocation and refuses to let a same-turn confirmation resolve. `run_agent`
+  accepts an optional `history` list so a caller can carry the conversation
+  across turns, which is what makes the legitimate, separate-turn confirmed
   call possible.
 
 `session4/agent.py` implements the loop: call the model with the tool
@@ -150,7 +201,14 @@ end-to-end across two turns: the first turn must leave the database
 unmodified, and only the confirmed follow-up turn may apply the change —
 checked against the actual SQLite row, not just the tool's return value.
 
-Both require `ANTHROPIC_API_KEY` and make real API calls.
+A third, `score_adversarial_confirm_bypass`, red-teams that guardrail
+instead of just exercising the happy path: it sends a single message
+explicitly trying to get the agent to skip confirmation entirely, and
+passes only if the database stays untouched — regardless of what the
+agent says or which tools it calls. This is the check that originally
+caught a real bypass (see "Why this is agentic" above) before it shipped.
+
+All three require `ANTHROPIC_API_KEY` and make real API calls.
 
 ## Notes
 
