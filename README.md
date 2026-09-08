@@ -1,8 +1,38 @@
 # llm-supply-chain-assistant
 
+![CI](https://github.com/norenlivingston/llm-supply-chain-assistant/actions/workflows/ci.yml/badge.svg)
+
 A RAG pipeline with an agentic tool-calling layer on top, built against the
 Anthropic API and ChromaDB, in the supply chain domain. No LangChain — raw
 Anthropic tool calling throughout, for a transparent agent loop.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    DOCS["docs/*.txt"] -->|"session3.ingest"| CHROMA[("Chroma<br/>vector store")]
+
+    USER["User question"] --> AGENT{"Agent loop<br/>session4/agent.py"}
+
+    AGENT -->|"search_knowledge_base"| CHROMA
+    CHROMA -->|"retrieved chunks"| AGENT
+
+    AGENT -->|"calculate_reorder_point"| MATH["Deterministic math<br/>(no model involved)"]
+    MATH --> AGENT
+
+    AGENT -->|"lookup_shipment_status"| SHIP[("SQLite<br/>shipments")]
+    SHIP --> AGENT
+
+    AGENT -->|"flag_shipment_for_expedite<br/>confirm=false"| PENDING[("SQLite<br/>pending_confirmations")]
+    PENDING -.->|"confirm=true<br/>separate turn only"| SHIP
+
+    AGENT -->|"stop_reason != tool_use"| ANSWER["Final answer<br/>citations + tool-call trace"]
+```
+
+Plain RAG (`session3`) is just the top path: docs → Chroma → retrieve →
+generate, no decisions. The agent loop is what adds routing across all
+four tools, and the guarded path (bottom) is the one that writes — see
+below for why it needs two separate checks, not one.
 
 ## Why this is agentic, not just RAG with tools attached
 
@@ -66,13 +96,17 @@ llm-supply-chain-assistant/
 │                      writes, gated behind human confirmation), SQLite
 │                      shipment records, multi-step reasoning/routing loop,
 │                      standalone Streamlit UI with a visible tool-call trace
-└── eval/              tool-routing accuracy eval for the agent (see below)
+├── eval/              tool-routing accuracy eval for the agent (see below),
+│                      requires ANTHROPIC_API_KEY and makes real API calls
+└── tests/             pytest suite - no API key needed, runs in CI on
+                       every push (see below)
 ```
 
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt        # to run the app
+pip install -r requirements-dev.txt    # to also run the test suite
 export ANTHROPIC_API_KEY=sk-...
 ```
 
@@ -103,7 +137,11 @@ streamlit run session4/app.py
 streamlit run app.py
 
 # Eval - does the agent route to the right tool(s) per question?
+# (requires ANTHROPIC_API_KEY, makes real API calls)
 python -m eval.eval_routing
+
+# Tests - no API key needed, same checks CI runs on every push
+python -m pytest tests/ -v
 ```
 
 ## Session 4: the agentic layer
@@ -209,6 +247,24 @@ agent says or which tools it calls. This is the check that originally
 caught a real bypass (see "Why this is agentic" above) before it shipped.
 
 All three require `ANTHROPIC_API_KEY` and make real API calls.
+
+## Tests and CI
+
+`tests/` covers the same logic as the eval suite above, but without ever
+calling the real Anthropic API — retrieval quality, the tool functions, and
+both guardrail cases (same-turn bypass blocked, legitimate cross-turn
+confirm succeeds) run against a scripted fake client instead of a live
+model. That split is deliberate: the eval suite proves the *real model*
+behaves correctly, which needs a real (billed) API call every time; the
+test suite proves the *code's own logic* is correct — the SQL, the SQLite
+guardrail state, the same-turn tracking — for free, so it can run on every
+push without cost. `.github/workflows/ci.yml` runs `tests/` on every push
+and pull request; the eval suite is intentionally not wired into CI, since
+that would spend real money on every commit.
+
+```bash
+python -m pytest tests/ -v
+```
 
 ## Notes
 
