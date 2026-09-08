@@ -1,11 +1,5 @@
 # llm-supply-chain-assistant
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://llm-supply-chain-assistant-w4vwcyk5ldzvj8kxzqk5lh.streamlit.app/)
-
-**Live demo:** https://llm-supply-chain-assistant-w4vwcyk5ldzvj8kxzqk5lh.streamlit.app/
-(access-gated — ask for a code; each session is capped at 5 messages, see
-"Access gate and message cap" below for why)
-
 A RAG pipeline with an agentic tool-calling layer on top, built against the
 Anthropic API and ChromaDB, in the supply chain domain. No LangChain — raw
 Anthropic tool calling throughout, for a transparent agent loop.
